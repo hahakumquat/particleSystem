@@ -1,0 +1,13 @@
+// particle system class
+ParticleSystem = function(params) {
+
+    var obj = this;
+
+    if (params.
+}
+
+ParticleSystem.prototype.init = function() {
+}
+
+
+    
