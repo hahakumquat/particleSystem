@@ -1,6 +1,117 @@
-var scene, camera, renderer, particles, 
+// global parameters and objects
+var _;
 
-(function() {
-    init();
-    animate();
-})();
+$(document).ready(function() {
+    var loader = new THREE.TextureLoader();
+    loader.load("img/particle.jpg", function(texture) {
+	init(texture);
+	animate();
+    });
+});
+
+/***************************************************************/
+/*********************INIT FUNCTIONS****************************/
+/***************************************************************/
+
+function init(texture) {
+	_ = {};
+	initParameters(_);
+	initObjects(_, texture);
+}
+
+// returns global parameters
+function initParameters(params) {
+
+    params.container = document.getElementById("container");
+    params.width = window.innerWidth;
+    params.height = window.innerHeight;
+    params.view_angle = 45;
+    params.aspect = params.width / params.height;
+    params.near = 0.1;
+    params.far = 1000;
+}
+
+// returns scene, camera, controls, renderer, particlesystem
+function initObjects(params, texture) {
+
+    params.scene = new THREE.Scene();
+    
+    params.camera= new THREE.PerspectiveCamera(
+	params.view_angle,
+	params.aspect,
+	params.near,
+	params.far);    
+
+    params.renderer = new THREE.WebGLRenderer();
+    params.renderer.setSize(params.width, params.height);
+    params.container.appendChild(params.renderer.domElement);
+    
+    // orbit controls
+    params.controls = new THREE.OrbitControls(params.camera, params.renderer.domElement);
+    params.controls.enableDamping = true;
+    params.controls.rotateSpeed = 0.2;
+    params.controls.zoomSpeed = 0.5;
+    params.controls.dampingFactor = 0.25;
+    params.controls.enableZoom = true;
+    
+    // aesthetic background
+    initBackground(params);
+    
+    params.camera.position.z = 100;
+    params.scene.add(params.camera);
+
+    particleParams = {
+    	maxParticles: 100,
+	size: 3.,
+    };
+
+    params.particleSystem = new ParticleSystem(particleParams, texture);
+    params.scene.add(params.particleSystem.points);
+}
+
+function initBackground(params) {
+    var light = new THREE.PointLight(0xFFFFFF, 1, 1000);
+    light.position.set(0, 70, -200);
+    var sphere = new THREE.Mesh(new THREE.SphereGeometry(300, 50, 50),
+				new THREE.MeshLambertMaterial({
+	color: 0x444444,
+	side: THREE.DoubleSide,
+    }));
+    params.scene.add(light);
+    params.scene.add(sphere);
+}
+
+/***************************************************************/
+/*********************ANIMATION FUNCTION************************/
+/***************************************************************/
+
+function animate() {
+    _.controls.update();
+    _.particleSystem.update();
+    _.renderer.render(_.scene, _.camera);
+    requestAnimationFrame(animate);
+}
+
+/***************************************************************/
+/**************************MISCELLANEOUS************************/
+/***************************************************************/
+
+// resize screen
+window.addEventListener("resize", function() {
+    _.width = window.innerWidth;
+    _.height = window.innerHeight;
+    _.aspect = _.width / _.height;
+
+    _.camera.aspect = _.aspect;
+    _.camera.updateProjectionMatrix();
+
+    _.renderer.setSize(_.width, _.height);
+});
+
+// exploding particles bug with timer
+$(window).blur(function(){
+    _.particleSystem.time.start();
+});
+$(window).focus(function(){
+    _.particleSystem.time.stop();
+});

@@ -1,13 +1,110 @@
 // particle system class
-ParticleSystem = function(params) {
+ParticleSystem = function(params, particleTex) {
 
-    var obj = this;
+    var self = this;
+    self.time = new THREE.Clock(true);
+    self.position = params.position || new THREE.Vector3(0, -30, 0);
+    self.maxParticles = params.maxParticles || 1000;
+    self.lifetime = params.lifetime || 5.0;
+    self.color = params.color || new THREE.Color(0xFFFFFF);
+    self.size = params.size || 1.0;
+    self.blending = params.blending || THREE.AdditiveBlending;
+    self.transparent = params.transparent || true;
 
-    if (params.
-}
+    // geometry object that holds buffers
+    // var particleGeometry = new THREE.Geometry();
 
-ParticleSystem.prototype.init = function() {
-}
-
-
+    // // set vertices
+    // for (var k = 0; k < self.maxParticles; k++) {
+    // 	particleGeometry.vertices.push(new THREE.Vector3(0, 0, 0));
+    // }
     
+    var particleMaterial = new THREE.PointsMaterial({
+    	color: 0xffffff,
+    	size: self.size,
+    	blending: self.blending,
+    	map: particleTex,
+    	transparent: self.transparent,
+    	alphaTest: 0.5,
+    	depthTest : false,
+    	depthWrite : false
+    });
+
+    var particleGeometry = new THREE.BufferGeometry();
+    var positionBuffer = new Float32Array(self.maxParticles * 3);
+    var velocityLifeBuffer = new Float32Array(self.maxParticles * 4);
+
+    for (var k = 0; k < self.maxParticles; k++) {
+	positionBuffer[k * 3 + 0] = 0;
+	positionBuffer[k * 3 + 1] = 0;
+	positionBuffer[k * 3 + 2] = 0;
+
+	velocityLifeBuffer[k * 4 + 0] = (Math.random() - 0.5) / 2;
+	velocityLifeBuffer[k * 4 + 1] = (Math.random() - 0.5) / 2 + 0.5;
+	velocityLifeBuffer[k * 4 + 2] = (Math.random() - 0.5) / 2;
+	velocityLifeBuffer[k * 4 + 2] = k * self.lifetime / self.maxParticles;
+    }
+
+    var positionAttribute = new THREE.BufferAttribute(positionBuffer, 3);
+    positionAttribute.setDynamic(true);
+    particleGeometry.addAttribute("position", positionAttribute);
+    
+    var velocityLifeAttribute = new THREE.BufferAttribute(velocityLifeBuffer, 4);
+    velocityLifeAttribute.setDynamic(true);
+    particleGeometry.addAttribute("velocityLife", velocityLifeAttribute);
+    
+    
+    var particlePoints = new THREE.Points(particleGeometry, particleMaterial);
+    console.log(particlePoints);
+    // // set attributes
+    // for (var k = 0; k < self.maxParticles; k++) {
+	
+    // 	particlePoints.geometry.vertices[k].velocity = new THREE.Vector3((Math.random() - 0.5) / 2, 0.5 + (Math.random() / 3), (Math.random() - 0.5) / 2).normalize();
+    // 	particlePoints.geometry.vertices[k].life = self.lifetime - (k * self.lifetime / self.maxParticles);
+    // }
+    
+    self.points = particlePoints;
+}
+
+ParticleSystem.prototype.update = function() {
+    var self = this;
+    var delta = self.time.getDelta();
+    // for (var k = 0; k < self.maxParticles; k++) {
+    // 	if (self.points.geometry.vertices[k].life - delta < 0) {
+    // 	    self.points.geometry.vertices[k].life = self.lifetime;
+    // 	    self.points.geometry.vertices[k].x = self.position.x;
+    // 	    self.points.geometry.vertices[k].y = self.position.y;
+    // 	    self.points.geometry.vertices[k].z = self.position.z;
+    // 	}
+    // 	else {
+    // 	    self.points.geometry.vertices[k].life -= delta;
+    // 	    var velocity = self.points.geometry.vertices[k].velocity;
+    // 	    self.points.geometry.vertices[k].x += velocity.x;
+    // 	    self.points.geometry.vertices[k].y += velocity.y;
+    // 	    self.points.geometry.vertices[k].z += velocity.z;
+    // 	}
+    // }
+    // self.points.geometry.verticesNeedUpdate = true;
+    var positions = self.points.geometry.attributes.position.array;
+    var velLifes = self.points.geometry.attributes.velocityLife.array;
+    for (var k = 0; k < self.maxParticles; k++) {
+    	if (velLifes[k * 4 + 3] - delta < 0) {
+    	    velLifes[k * 4 + 3] = self.lifetime;
+    	    positions[k * 3 + 0] = self.position.x;
+    	    positions[k * 3 + 1] = self.position.y;
+    	    positions[k * 3 + 2] = self.position.z;
+    	}
+    	else {
+    	    velLifes[k * 4 + 3] -= delta;
+    	    var x = positions[k * 3 + 0];
+	    var y = positions[k * 3 + 1];
+	    var z = positions[k * 3 + 2];
+    	    positions[k * 3 + 0] += x;
+    	    positions[k * 3 + 1] += y;
+    	    positions[k * 3 + 2] += z;
+    	}
+    }
+    self.points.geometry.attributes.position.needsUpdate = true;
+    self.points.geometry.attributes.velocity.needsUpdate = true;
+    _.renderer.render(_.scene, _.camera);
+}

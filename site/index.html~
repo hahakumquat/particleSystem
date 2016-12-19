@@ -2,13 +2,14 @@
   <head>
     <title>CS175 Final Project</title>
     <link rel="stylesheet" href="css/styles.css">
-    <script src="js/three.min.js"></script>
-    <script src="js/OrbitControls.js"></script>
-    <script src="js/particleSystem.js"></script>
   </head>
   <body>
     <div id="container">
     </div>
+    <script src="js/jquery-3.1.1.min.js"></script>
+    <script src="js/three.min.js"></script>
+    <script src="js/OrbitControls.js"></script>
+    <script src="js/particleSystem.js"></script>    
     <script src="js/main.js"></script>
   </body>
 </html>
