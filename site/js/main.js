@@ -1,26 +1,27 @@
 // global parameters and objects
 var _;
 
-(function() {
-    
-    init();
-    animate();
-})();
+$(document).ready(function() {
+    var loader = new THREE.TextureLoader();
+    loader.load("img/particle.jpg", function(texture) {
+	init(texture);
+	animate();
+    });
+});
 
 /***************************************************************/
 /*********************INIT FUNCTIONS****************************/
 /***************************************************************/
 
-function init() {
-    _ = {};
-    initParameters(_);
-    initObjects(_);
+function init(texture) {
+	_ = {};
+	initParameters(_);
+	initObjects(_, texture);
 }
 
 // returns global parameters
 function initParameters(params) {
 
-    params.clock = new THREE.Clock(true);
     params.container = document.getElementById("container");
     params.width = window.innerWidth;
     params.height = window.innerHeight;
@@ -31,7 +32,7 @@ function initParameters(params) {
 }
 
 // returns scene, camera, controls, renderer, particlesystem
-function initObjects(params) {
+function initObjects(params, texture) {
 
     params.scene = new THREE.Scene();
     
@@ -48,20 +49,24 @@ function initObjects(params) {
     // orbit controls
     params.controls = new THREE.OrbitControls(params.camera, params.renderer.domElement);
     params.controls.enableDamping = true;
-    params.controls.dampingFactor = 0.5;
+    params.controls.dampingFactor = 0.25;
     params.controls.enableZoom = true;
-    params.controls.autoRotate = true;
+    // params.controls.autoRotate = true;
 
     // var sphere = new THREE.Mesh(new THREE.SphereGeometry(), new THREE.MeshBasicMaterial({color: "white"}));
     // params.scene.add(sphere);
-    // params.camera.position.z = 300;
+    
+    params.camera.position.z = 300;
+    params.scene.add(params.camera);
 
     particleParams = {
-	numParticles: 2000
+    	maxParticles: 5000,
+	size: 1.,
     };
-    params.particleSystem = new ParticleSystem(particleParams);
     
-    params.scene.add(params.camera);
+
+    params.particleSystem = new ParticleSystem(particleParams, texture);
+    params.scene.add(params.particleSystem.points);
 }
 
 /***************************************************************/
@@ -69,6 +74,8 @@ function initObjects(params) {
 /***************************************************************/
 
 function animate() {
+    _.controls.update();
+    _.particleSystem.update();
     _.renderer.render(_.scene, _.camera);
     requestAnimationFrame(animate);
 }
@@ -88,4 +95,12 @@ window.addEventListener("resize", function() {
 
     _.renderer.setSize(_.width, _.height);
     requestAnimationFrame(animate);
+});
+
+// exploding particles bug with timer
+$(window).blur(function(){
+    _.particleSystem.time.start();
+});
+$(window).focus(function(){
+    _.particleSystem.time.stop();
 });
